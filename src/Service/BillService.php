@@ -102,7 +102,7 @@ class BillService
                         {
                             $productID = $k1['id'];
                             $productOBJ = $this->productService->getProductById($productID);
-                            $productOBJ->setQuantity($productOBJ + $k1['quantity']);
+                            $productOBJ->setQuantity($productOBJ->getQuantity() + $k1['quantity']);
 
                             $this->em->persist($productOBJ);
                             $this->em->flush();
