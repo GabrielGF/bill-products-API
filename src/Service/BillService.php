@@ -28,6 +28,7 @@ class BillService
     {
         $this->productService = $productService;
         $this->em = $em;
+        $this->billProductService = $billProductService;
     }
 
     public function create($data)
@@ -44,6 +45,8 @@ class BillService
         $bill_products_DTO = new BillProductsDTO();
         $item_quantity = 0;
         $total_bill = 0;
+        $bill_product_id = [];
+        $product_array = [];
 
         foreach($data as $bill_array)
         {
@@ -51,7 +54,6 @@ class BillService
             $product = $this->productService->getProductById($product_id);
 
             $product_quatity = $bill_array->quantity;
-            $bill_product_id = [];
 
             if($product)
             {
@@ -72,19 +74,39 @@ class BillService
 
                     $item_quantity = $item_quantity + $product_quatity;
                     $total_bill = $total_bill + ($product->getUnitPrice() * $product_quatity) ;
-                    $bill_product_id = $bill_product->getId();
+                    $bill_product_id[$i] = $bill_product->getId();
+                    //producto y cantidad que se setea al billproduct
+                    //lo debo devolver cuando falla la creación
+                    $product_array[$i]['id'] = $product->getId();
+                    $product_array[$i]['quantity'] = $product_quatity;
                     $bill_products_DTO->setProductIdArray('bill_product_id_' . $i, $bill_product_id);
                     $i++;
                 }
                 else
                 {
+                    $i = 0;
                     //quitar los BillProduct en el persist de doctrine
                     $this->em->clear();
                     //elimino las entities guardadas generadas antes del error
-                    $this->deleteBill($bill);
                     foreach($bill_product_id as $k => $v)
                     {
                         $this->billProductService->deleteBillProduct($v);
+                    }
+                    $this->deleteBill($bill);
+
+                    //devuelvo a los products los que les habia restado
+                    //cuando se creo el billproduct
+                    foreach($product_array as $product)
+                    {
+                        foreach($product as $k1)
+                        {
+                            $productID = $k1['id'];
+                            $productOBJ = $this->productService->getProductById($productID);
+                            $productOBJ->setQuantity($productOBJ + $k1['quantity']);
+
+                            $this->em->persist($productOBJ);
+                            $this->em->flush();
+                        }
                     }
 
                     return false;

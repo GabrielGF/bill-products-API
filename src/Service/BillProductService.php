@@ -37,7 +37,7 @@ class BillProductService
 
     public function deleteBillProduct($id)
     {
-        $bill_product_obj = $this->em->getRepository(BillProduct::class)->find($id);
+        $bill_product_obj = $this->billProductRepository->find($id);
 
         if (!$bill_product_obj) 
         {
